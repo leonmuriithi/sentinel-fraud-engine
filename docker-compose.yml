@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 1. ZOOKEEPER (Required for Kafka orchestration)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - sentinel_net
+
+  # 2. APACHE KAFKA (The Event Backbone)
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - sentinel_net
+
+  # 3. REDIS (High-Speed State Store for Velocity Checks)
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes  # Persistence enabled
+    networks:
+      - sentinel_net
+
+  # 4. INGESTION API (Node.js Producer)
+  # Receives thousands of transactions per second
+  ingestor:
+    build: ./services/ingestor
+    container_name: sentinel_ingestor
+    ports:
+      - "3000:3000"
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - NODE_ENV=production
+    depends_on:
+      - kafka
+    networks:
+      - sentinel_net
+
+  # 5. FRAUD ENGINE (Python Consumer + AI)
+  # Analyzes patterns in real-time
+  detector:
+    build: ./services/detector
+    container_name: sentinel_ai_core
+    environment:
+      - KAFKA_BROKER=kafka:9092
+      - REDIS_HOST=redis
+      - MODEL_PATH=/models/isolation_forest_v1.pkl
+    depends_on:
+      - kafka
+      - redis
+    networks:
+      - sentinel_net
+
+networks:
+  sentinel_net:
+    driver: bridge
