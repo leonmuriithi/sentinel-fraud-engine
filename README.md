@@ -6,7 +6,14 @@ Sentinel is a decoupled fraud detection engine designed to process high-throughp
 
 ##  System Architecture
 
-![Architecture](https://via.placeholder.com/800x400?text=Transaction+App+-->+Kafka+Topic+-->+Sentinel+Engine+-->+Redis+Cache)
+```mermaid
+graph LR
+    A[Payment Gateway] -->|HTTP POST| B(Ingestor Service)
+    B -->|Produce Event| C{Apache Kafka}
+    C -->|Consume Topic| D[Fraud Detector Service]
+    D -->|Fetch State| E[(Redis Cache)]
+    D -->|Inference| F[Isolation Forest Model]
+    F -->|Score < -0.5| G[Trigger Alert]
 
 ### The "Decoupled" Approach
 Unlike monolithic systems that block the user while checking for fraud, Sentinel operates asynchronously:
