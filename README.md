@@ -5,7 +5,7 @@
 
 Sentinel is a decoupled fraud detection engine designed to process high-throughput transaction streams using **Apache Kafka**, **Redis**, and **Unsupervised Learning (Isolation Forest)**. It is architected to identify anomalies in < 15ms without blocking the core payment ledger.
 
-## 🏗 System Architecture
+##  System Architecture
 
 ```mermaid
 graph LR
