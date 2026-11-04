@@ -1,0 +1,15 @@
+{
+  "name": "sentinel-ingestor",
+  "version": "1.0.0",
+  "description": "HTTP ingestion service that validates transactions and publishes them to Kafka",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  },
+  "license": "MIT"
+}
